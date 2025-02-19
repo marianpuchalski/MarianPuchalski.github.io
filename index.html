@@ -6,66 +6,192 @@
     <title>Minutnik</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Courier New', monospace;
             text-align: center;
             padding: 50px;
-            background-color: #2c3e50;
+            background-color: #000000;
             color: white;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
         }
+
+        #inputArea {
+            margin-bottom: 30px;
+        }
+
+        input {
+            font-size: 1.5rem;
+            padding: 10px;
+            margin: 10px;
+            width: 80px;
+            text-align: center;
+            background-color: #2c3e50;
+            border: 1px solid #ecf0f1;
+            color: white;
+            border-radius: 5px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
         #timer {
             font-size: 4rem;
             margin: 20px;
+            padding: 20px;
+            background-color: #2c3e50;
+            border-radius: 10px;
+            width: 200px;
+            transition: all 0.3s ease;
         }
+
         button {
             padding: 10px 20px;
             font-size: 1.2rem;
             cursor: pointer;
-            margin-top: 20px;
+            margin: 10px;
             background-color: #3498db;
             border: none;
             color: white;
             border-radius: 5px;
+            transition: background-color 0.2s;
         }
+
         button:active {
             background-color: #2980b9;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #resetButton {
+            background-color: #e74c3c;
+        }
+
+        #resetButton:hover {
+            background-color: #c0392b;
+        }
+
+        @keyframes flashBackground {
+            0% {
+                background-color: #000;
+            }
+            50% {
+                background-color: #7f8c8d;
+            }
+            100% {
+                background-color: #000;
+            }
+        }
+
+        .flashing {
+            animation: flashBackground 1s ease-in-out 3;
+        }
+
+        @keyframes pulseShadow {
+            0% {
+                box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 20px 5px rgba(255, 0, 0, 0.7);
+            }
+            100% {
+                box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.5);
+            }
+        }
+
+        .pulsing {
+            animation: pulseShadow 1s infinite;
         }
     </style>
 </head>
 <body>
 
-    <h1>Minutnik</h1>
+    <div id="inputArea">
+        <input type="number" id="hours" placeholder="Godziny" min="0"> :
+        <input type="number" id="minutes" placeholder="Minuty" min="0"> :
+        <input type="number" id="seconds" placeholder="Sekundy" min="0">
+    </div>
+
     <div id="timer">00:00</div>
-    <button id="startButton">Start</button>
+
+    <div>
+        <button id="startButton">Start</button>
+        <button id="resetButton">Reset</button>
+    </div>
 
     <script>
         let timer;
-        let seconds = 0;
-        let running = false;
+        let secondsRemaining;
+        let isRunning = false;
+        let setTimeInSeconds;
         let startButton = document.getElementById('startButton');
+        let resetButton = document.getElementById('resetButton');
         let timerDisplay = document.getElementById('timer');
+        let hoursInput = document.getElementById('hours');
+        let minutesInput = document.getElementById('minutes');
+        let secondsInput = document.getElementById('seconds');
 
         startButton.addEventListener('click', function() {
-            if (running) {
+            if (isRunning) {
                 clearInterval(timer);
                 startButton.textContent = 'Start';
             } else {
-                startTimer();
-                startButton.textContent = 'Stop';
+                setTimeInSeconds = (parseInt(hoursInput.value) || 0) * 3600 + (parseInt(minutesInput.value) || 0) * 60 + (parseInt(secondsInput.value) || 0);
+                if (setTimeInSeconds > 0) {
+                    secondsRemaining = setTimeInSeconds;
+                    startTimer();
+                    startButton.textContent = 'Stop';
+                } else {
+                    alert("Proszę wprowadzić czas!");
+                }
             }
-            running = !running;
+            isRunning = !isRunning;
+        });
+
+        resetButton.addEventListener('click', function() {
+            clearInterval(timer);
+            secondsRemaining = 0;
+            isRunning = false;
+            timerDisplay.textContent = "00:00";
+            hoursInput.value = '';
+            minutesInput.value = '';
+            secondsInput.value = '';
+            startButton.textContent = 'Start';
+            document.body.style.backgroundColor = '#000000';
+            document.body.classList.remove('flashing');
+            timerDisplay.classList.remove('pulsing');
+            timerDisplay.style.boxShadow = '';
         });
 
         function startTimer() {
             timer = setInterval(function() {
-                seconds++;
-                let minutes = Math.floor(seconds / 60);
-                let remainingSeconds = seconds % 60;
-                if (seconds < 0) {
-                    minutes = Math.abs(Math.floor(seconds / 60));
-                    remainingSeconds = Math.abs(seconds % 60);
+                if (secondsRemaining > 0) {
+                    secondsRemaining--;
+                } else {
+                    secondsRemaining--;
+                    document.body.classList.add('flashing');
+                    timerDisplay.classList.add('pulsing');
                 }
-                timerDisplay.textContent = formatTime(minutes, remainingSeconds);
+                updateTimerDisplay();
             }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            let minutes = Math.floor(Math.abs(secondsRemaining) / 60);
+            let seconds = Math.abs(secondsRemaining) % 60;
+
+            if (secondsRemaining >= 0) {
+                timerDisplay.textContent = formatTime(minutes, seconds);
+            } else {
+                timerDisplay.textContent = '-' + formatTime(minutes, seconds);
+            }
         }
 
         function formatTime(minutes, seconds) {
